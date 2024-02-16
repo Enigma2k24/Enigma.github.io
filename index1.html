@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style>
+         body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden;
+            user-select: none;
+            
+        }
+
+        #overlay {
+            
+            border-color: rgba(0,0,0,0.8);
+            border-style: solid;
+            border-radius: 50%;
+            border-top-width: 200vh;
+            border-left-width: 200vw;
+            border-right-width: 200vw;
+            border-bottom-width: 200vh;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 15vh;
+            height: 15vh;
+            z-index: 99;
+            filter: blur(50px);
+        }
+
+        .word-container {
+            position: fixed;
+            z-index: 99999;
+            color: rgb(51, 51, 51);
+            font-size: larger;
+            white-space: nowrap;
+        }
+        
+        .input-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="overlay" class="overlay"></div>
+    <div class="word-container" id="wordContainer"></div>
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Enter the text in lowercase">
+        <button onclick="checkText()">Check</button>
+    </div>
+    
+    <script>
+        var riddles = [];
+        document.querySelector('.overlay').style.cursor = 'none';
+        document.querySelector('.word-container').style.cursor = 'none';
+        $(document).bind('mousemove', function(e){
+            $('.overlay').css({
+                left:  e.pageX,
+                top:   e.pageY
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchRiddles();
+        });
+
+        function fetchRiddles() {
+    fetch('riddles.txt')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch riddles. Status: ' + response.status);
+            }
+            return response.text();
+        })
+        .then(data => {
+            var lines = data.split('\n');
+            lines.forEach((line, index) => {
+                
+                var parts = line.split(':');
+                var question = parts[0].trim();
+                var answer = parts[1].trim();
+                riddles.push({ question: question, answer: answer });
+            });
+            if (riddles.length > 0) {
+                adjustParagraphPosition();
+            } else {
+                console.error('No riddles found in the fetched data.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching riddles:', error);
+        });
+}
+
+
+
+
+
+        var answeredCorrectly = 0;
+        var randomIndex;
+
+        function adjustParagraphPosition() {
+            var screenWidth = window.innerWidth;
+            var screenHeight = window.innerHeight;
+            var container = document.getElementById('wordContainer');
+
+            var leftPosition = (screenWidth - container.offsetWidth) * Math.random();
+            var topPosition = (screenHeight - container.offsetHeight) * Math.random();
+
+            container.style.left = leftPosition + 'px';
+            container.style.top = topPosition + 'px';
+
+            // Choose a random riddle that has not been answered correctly before
+            do {
+                randomIndex = Math.floor(Math.random() * riddles.length);
+            } while (riddles[randomIndex].answer === null); // Loop until an unanswered riddle is found
+            container.innerHTML = riddles[randomIndex].question.replace(/,/g, "<br>");
+        }
+
+        function checkText() {
+            var userInput = document.getElementById('userInput').value.trim().toLowerCase();
+            var originalText = riddles[randomIndex].answer.toLowerCase(); // Access the correct answer based on randomIndex
+
+            if (userInput === originalText) {
+                answeredCorrectly++;
+                if (answeredCorrectly === 5) {
+                    window.location.href = "https://example.com";
+                }
+                // Mark this riddle as answered correctly so it won't repeat
+                riddles[randomIndex].answer = null;
+                alert("Correct!");
+                document.getElementById('userInput').value="";
+            } else {
+                alert("Incorrect!");
+            }
+            adjustParagraphPosition();
+        }
+    </script>
+</body>
+</html>
